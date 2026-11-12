@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-11-09T22:37:42Z",
+  "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+  "models_endpoint": {
+    "object": "list",
+    "data": [
+      {
+        "id": "deepseek-ai/DeepSeek-V4.1-Flash",
+        "object": "model",
+        "created": 1794263862,
+        "owned_by": "vllm",
+        "root": "gs://deepseek-v6e-asia-south1/models/deepseek-ai/DeepSeek-V4.1-Flash",
+        "parent": null,
+        "max_model_len": 65536,
+        "permission": [
+          {
+            "id": "modelperm-a45bd5d808983119",
+            "object": "model_permission",
+            "created": 1794263862,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "tests": [
+    {
+      "name": "tpu_math_reasoning",
+      "passed": true,
+      "text": "- Routed experts per chip: \\(384 / 32 = 12\\)  \n- Total HBM: \\(32 \\times 32 = 1024\\) GB",
+      "ttft_ms": 14158.951501998672,
+      "e2e_ms": 167604.95823999736,
+      "prompt_tokens": 0,
+      "completion_tokens": 34,
+      "decode_tps": 0.2150593599763455
+    },
+    {
+      "name": "agentic_tool_call",
+      "passed": true,
+      "text": "{\"tool\": \"read_file\", \"arguments\": {\"path\": \"/workspace/vllm-torchtpu/src/vllm_torchtpu/platforms/tpu_platform.py\", \"start_line\": 100, \"end_line\": 200}}",
+      "ttft_ms": 16524.649622999277,
+      "e2e_ms": 253732.7627049999,
+      "prompt_tokens": 0,
+      "completion_tokens": 53,
+      "decode_tps": 0.21921678531300523
+    },
+    {
+      "name": "multiturn_agent_debugging",
+      "passed": true,
+      "text": "Here's the deterministic replacement:\n\n```python\ndef prepare_dp_ports(rpc_port: int) -> list[int]:\n    return [rpc_port + 100 + i for i in range(5)]\n```\n\n**Why this fixes the bug:** The original used `random.randint(20000, 30000)`, so every host (and every call) produced different ports. In a multi-host setup, peer hosts must agree on the same port numbers to establish data-parallel connections \u2014 random ports make that impossible.\n\n**Why offsets work:** Deriving each port deterministically from `rpc_port` guarantees that any host given the same `rpc_port` computes the identical list. The `+100` base offset keeps the DP ports clear of the RPC port (and any other ports in the `+1..+99` range you may reserve), and `+i` gives 5 distinct, collision-free ports.\n\nA couple of things worth verifying in your setup:\n- **Range safety:** ensure `rpc_port + 100 + 4` stays within the valid port range (\u2264 65535) and doesn't collide with other reserved ports.\n- **Consistency:** all peer hosts must be passed the same `rpc_port`",
+      "ttft_ms": 16938.274877000367,
+      "e2e_ms": 1153010.860661001,
+      "prompt_tokens": 0,
+      "completion_tokens": 256,
+      "decode_tps": 0.22445748906442028
+    },
+    {
+      "name": "long_context_repo_needle",
+      "passed": true,
+      "text": "TOPOLOGY_SENTINEL_4X8_V6E32",
+      "ttft_ms": 134271.51909000168,
+      "e2e_ms": 196873.49393000113,
+      "prompt_tokens": 0,
+      "completion_tokens": 14,
+      "decode_tps": 0.20766118054942997
+    },
+    {
+      "name": "concurrent_8_agent_burst",
+      "passed": true,
+      "burst_wall_ms": 89688.10921900149,
+      "individual_ttft_ms": [
+        9657.0,
+        9659.14,
+        9661.26,
+        9658.9,
+        9651.03,
+        9652.05,
+        9648.6,
+        9652.54
+      ],
+      "individual_e2e_ms": [
+        89684.67,
+        89683.6,
+        89684.37,
+        89683.91,
+        89681.35,
+        89683.56,
+        89680.91,
+        89683.06
+      ]
+    }
+  ],
+  "all_passed": true
+}
